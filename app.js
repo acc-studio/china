@@ -158,7 +158,12 @@
     const msg = (f, bytes) => [(f << 3) | 2].concat(vint(bytes.length), bytes);
     const int = (f, v) => vint((f << 3) | 0).concat(vint(v));
     let b = [];
-    legs.forEach(([date, from, to]) => { b = b.concat(msg(3, str(2, date).concat(msg(13, str(2, from)), msg(14, str(2, to))))); });
+    legs.forEach(([date, from, to]) => {
+      let l = str(2, date);
+      [].concat(from).forEach((f) => { l = l.concat(msg(13, str(2, f))); });
+      [].concat(to).forEach((t) => { l = l.concat(msg(14, str(2, t))); });
+      b = b.concat(msg(3, l));
+    });
     for (let i = 0; i < S.pax; i++) b = b.concat(int(8, 1));
     b = b.concat(int(9, 1), int(19, legs.length > 1 ? 3 : 2));
     return btoa(String.fromCharCode.apply(null, b));
@@ -223,15 +228,16 @@
   const gwLegs = (R) => { const g = new Set(R.W.goldenWeek); return R.legs.filter((l) => g.has(iso(l.date))); };
 
   function vOverview(R) {
-    const first = R.stops[0], last = R.stops[R.stops.length - 1], W = R.W, fs = flightSet(), o = U.ov;
+    const first = R.stops[0], last = R.stops[R.stops.length - 1], W = R.W, o = U.ov;
     const heroKey = S.zjj ? "avatar" : (S.via === "xian" ? "terracotta" : "crane");
     const names = R.stops.map((s, i) => i === 0 || i === R.stops.length - 1 ? esc(sn(s.c)) : `<em>${esc(sn(s.c))}</em>`).join(" → ");
-    const flyFrom = minEur(fs.out) + minEur(fs.back);
+    const J = T.jaw[S.w][S.dir], flyFrom = minEur(J), satOpts = J.filter((x) => !x.fri), satFrom = J[0].fri && satOpts.length ? minEur(satOpts) : null;
+    const eurTl = (e) => `€${num(e)} (${U.approx} ${tl(e * FX.eur)})`;
     const longest = Math.max.apply(null, R.legs.filter((l) => !l.d.flight).map((l) => mins(l.d.rec[5])));
     const why = [];
     why.push(S.w === "A" ? o.gwA(esc(sn(first.c)), S.zjj && S.dir === "fwd", fmt(R.legs[0].date)) : o.gwB);
     why.push(o.rides(R.nRail, hm(R.railMin), hm(longest)));
-    why.push(o.jaw(esc(sn(first.c)), esc(sn(last.c)), `€${num(flyFrom)} (${U.approx} ${tl(flyFrom * FX.eur)})`));
+    why.push(o.jaw(esc(sn(first.c)), esc(sn(last.c)), eurTl(flyFrom), satFrom ? eurTl(satFrom) : null));
     why.push(S.via === "xian" ? o.xian : o.wh);
     if (R.nFlight) why.push(o.fl);
     return `
@@ -378,36 +384,33 @@
   function vFlights(R) {
     const W = R.W, fs = flightSet(), fwd = S.dir === "fwd", u = U.flights;
     const out = W.flyOut, back = W.flyBack;
-    const pick = (l) => l.find((o) => o.pick) || l[0];
-    const sumPick = pick(fs.out).eur + pick(fs.back).eur, sumCheap = minEur(fs.out) + minEur(fs.back);
-    const n = (k) => sn(city(k));
-    const cd = LANG === "tr" ? "Çengdu" : "Chengdu";
+    const n = (k) => sn(city(k)), cd = LANG === "tr" ? "Çengdu" : "Chengdu";
+    const SICH = ["CKG", "TFU"], SHA = ["PVG", "SHA"];
+    const jawLegs = fwd ? [[out, "IST", SICH], [back, SHA, "IST"]] : [[out, "IST", SHA], [back, SICH, "IST"]];
+    const sky = [[SKY.TFU, cd], [SKY.CKG, n("CKG")]].map(([c, label]) => A("sky", fwd
+      ? skyMulti(SKY.IST, c, out, SKY.SH, SKY.IST, back)
+      : skyMulti(SKY.IST, SKY.SH, out, c, SKY.IST, back), `${u.skyMulti} · ${label}`)).join("");
+    const leg = (lbl, f) => `<div class="jl"><span class="jlbl">${lbl}</span><b>${esc(f[0])}</b><span>${esc(wdays(f[1]))}</span><span class="mut">${esc(f[2])}</span></div>`;
+    const cards = T.jaw[S.w][S.dir].map((j) => `<div class="jcard ${j.tag}"><div class="jtop"><span class="tag ${j.tag === "comfort" ? "pick" : "cheap"}">${u.tags[j.tag]}</span><div class="jprice">${E(j.eur)}<span class="mut">${u.perPerson}${S.pax > 1 ? " · " + u.group(S.pax, "€" + num(j.eur * S.pax)) : ""}</span></div></div>
+        ${leg(u.outL, j.out)}${leg(u.backL, j.back)}
+        ${j.fri || j.sep ? `<p class="note-in">${j.fri ? u.fri : ""}${j.fri && j.sep ? " " : ""}${j.sep ? u.sep : ""}</p>` : ""}</div>`).join("");
     const outLinks = fwd
-      ? A("gf", gfURL([[out, "IST", AIR.CKG]]), `Google: IST → ${n("CKG")}`) + A("gf", gfURL([[out, "IST", AIR.TFU]]), `Google: IST → ${cd}`) + A("sky", sky1(SKY.IST, SKY.CKG, out), "Skyscanner → CKG") + A("sky", sky1(SKY.IST, SKY.TFU, out), "Skyscanner → TFU")
-      : A("gf", gfURL([[out, "IST", AIR.SH]]), `Google: IST → ${n("SH")}`) + A("sky", sky1(SKY.IST, SKY.SH, out), `Skyscanner → ${n("SH")}`);
+      ? A("gf", gfURL([[out, "IST", SICH]]), `Google: IST → ${n("CKG")} / ${cd}`) + A("sky", sky1(SKY.IST, SKY.TFU, out), "Skyscanner → TFU") + A("sky", sky1(SKY.IST, SKY.CKG, out), "Skyscanner → CKG")
+      : A("gf", gfURL([[out, "IST", SHA]]), `Google: IST → ${n("SH")}`) + A("sky", sky1(SKY.IST, SKY.SH, out), `Skyscanner → ${n("SH")}`);
     const backLinks = fwd
-      ? A("gf", gfURL([[back, AIR.SH, "IST"]]), `Google: ${n("SH")} → IST`) + A("sky", sky1(SKY.SH, SKY.IST, back), `Skyscanner: ${n("SH")} → IST`)
-      : A("gf", gfURL([[back, AIR.CKG, "IST"]]), `Google: ${n("CKG")} → IST`) + A("gf", gfURL([[back, AIR.TFU, "IST"]]), `Google: ${cd} → IST`) + A("sky", sky1(SKY.CKG, SKY.IST, back), "Skyscanner: CKG → IST") + A("sky", sky1(SKY.TFU, SKY.IST, back), "Skyscanner: TFU → IST");
-    const jaws = fwd
-      ? [[AIR.CKG, SKY.CKG, n("CKG"), AIR.SH, SKY.SH, n("SH")], [AIR.TFU, SKY.TFU, cd, AIR.SH, SKY.SH, n("SH")]]
-      : [[AIR.SH, SKY.SH, n("SH"), AIR.CKG, SKY.CKG, n("CKG")], [AIR.SH, SKY.SH, n("SH"), AIR.TFU, SKY.TFU, cd]];
-    const jawRows = jaws.map(([ga, sa, na, gb, sb, nb]) => {
-      const label = `IST → ${na} · ${nb} → IST`;
-      return `<div class="jaw"><b>${esc(label)}</b><div class="links">${A("gf", gfURL([[out, "IST", ga], [back, gb, "IST"]]), u.gfMulti)}${A("sky", skyMulti(SKY.IST, sa, out, sb, SKY.IST, back), u.skyMulti)}</div></div>`;
-    }).join("");
-    const group = S.pax > 1 ? u.group(S.pax, `€${num(sumPick * S.pax)} (${U.approx} ${tl(sumPick * S.pax * FX.eur)})`) : "";
+      ? A("gf", gfURL([[back, SHA, "IST"]]), `Google: ${n("SH")} → IST`) + A("sky", sky1(SKY.SH, SKY.IST, back), `Skyscanner: ${n("SH")} → IST`)
+      : A("gf", gfURL([[back, SICH, "IST"]]), `Google: ${n("CKG")} / ${cd} → IST`) + A("sky", sky1(SKY.TFU, SKY.IST, back), "Skyscanner: TFU → IST") + A("sky", sky1(SKY.CKG, SKY.IST, back), "Skyscanner: CKG → IST");
     return `<div class="sh"><div><h2>${u.h}</h2><p>${u.intro(fmt(D(out)), fmt(D(W.start)), fmt(D(back)), fullDate("2026-10-26"))}</p></div>
       <div class="ctl"><span class="ctl-lbl">${u.pax}</span><div class="seg"><button data-pax="-1" aria-label="−">−</button><button class="on" disabled style="opacity:1">${S.pax}</button><button data-pax="1" aria-label="+">+</button></div></div></div>
-      <div class="callout ok"><b>${fwd ? u.tipFwdT : u.tipRevT}</b>${fwd ? u.tipFwd : u.tipRev}</div>
-      <div class="fgrid">
-        <div class="card fcard"><h3>${u.outT(fmt(D(out)), esc(fs.outTo))}</h3>${fOpts(fs.out)}<div class="links">${outLinks}</div></div>
-        <div class="card fcard"><h3>${u.backT(fmt(D(back)), esc(fs.backFrom))}</h3>${fOpts(fs.back)}<div class="links">${backLinks}</div></div>
-      </div>
-      <div class="card" style="margin-top:18px"><h3>${u.jawT}</h3>
-        <p>${u.jaw(`€${num(sumPick)} (${U.approx} ${tl(sumPick * FX.eur)})`, `€${num(sumCheap)} (${U.approx} ${tl(sumCheap * FX.eur)})`, group)}</p>
-        ${jawRows}
-        <p class="note-in">${u.watch}</p>
-        <p class="note-in">${U.tryNote(FX.eur, FX.cny, fxWhen(), FX.live)}</p></div>`;
+      <div class="card"><h3>${u.jawT}</h3><p class="mut" style="margin-top:0">${u.jawIntro}</p>
+        <div class="jgrid">${cards}</div>
+        <p class="note-in"><b>${u.search}</b></p><div class="links">${A("gf", gfURL(jawLegs), u.gfMulti)}${sky}</div>
+        <p class="note-in">${u.watch} ${U.tryNote(FX.eur, FX.cny, fxWhen(), FX.live)}</p></div>
+      <details class="card oneway" style="margin-top:18px"><summary><b>${u.oneWayT}</b></summary>
+        <div class="fgrid" style="margin-top:12px">
+          <div class="fcard"><h3>${u.outT(fmt(D(out)), esc(fs.outTo))}</h3>${fOpts(fs.out)}<div class="links">${outLinks}</div></div>
+          <div class="fcard"><h3>${u.backT(fmt(D(back)), esc(fs.backFrom))}</h3>${fOpts(fs.back)}<div class="links">${backLinks}</div></div>
+        </div></details>`;
   }
 
   function vDetours() {
