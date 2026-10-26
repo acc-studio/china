@@ -273,3 +273,9 @@ table.wx td:last-child{text-align:right;font-weight:700;font-variant-numeric:tab
   .builder{position:static}
   html{scroll-padding-top:110px}
 }
+.lang-btn{width:auto;padding:0 10px;font-size:13px;font-weight:700}
+.try{font-size:.72em;color:var(--mut);font-weight:600;margin-left:5px;white-space:nowrap;font-family:Inter,sans-serif;letter-spacing:0}
+.stat .try,.price .try,.fopt .try{display:block;margin-left:0;margin-top:2px;font-size:12.5px}
+.jaw{padding:10px 0;border-top:1px solid var(--line)}
+.jaw:first-of-type{border-top:0}
+.jaw .links{margin-top:6px}
