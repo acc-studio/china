@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>China by Rail · May 2027</title>
+<meta name="description" content="Two weeks in China by high-speed rail, May 2027: Chongqing, Xi'an or Wuhan, Beijing and Shanghai, with optional detours to Zhangjiajie's Avatar mountains and Zhecheng's diamond factories.">
+<meta name="theme-color" content="#e8452c">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚄</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="vendor/leaflet.css">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="top">
+  <div class="top-in">
+    <a class="brand" href="#overview" data-tab="overview"><span class="brand-ico">🚄</span><span><b>China by Rail</b><small>May 2027 · party planner</small></span></a>
+    <nav class="tabs" id="tabs" aria-label="Sections">
+      <a href="#overview" data-tab="overview">Overview</a>
+      <a href="#days" data-tab="days">Day by day</a>
+      <a href="#places" data-tab="places">Places</a>
+      <a href="#trains" data-tab="trains">Trains</a>
+      <a href="#flights" data-tab="flights">Flights</a>
+      <a href="#detours" data-tab="detours">Detours</a>
+      <a href="#info" data-tab="info">Need to know</a>
+    </nav>
+    <button class="icon-btn" id="themeBtn" aria-label="Toggle dark mode" title="Toggle dark mode">◐</button>
+  </div>
+</header>
+
+<section class="builder" id="builder" aria-label="Trip builder">
+  <div class="builder-in">
+    <div class="ctl">
+      <span class="ctl-lbl">Dates</span>
+      <div class="seg" data-key="w">
+        <button data-val="A">1 – 16 May</button>
+        <button data-val="B">8 – 23 May</button>
+      </div>
+    </div>
+    <div class="ctl">
+      <span class="ctl-lbl">Direction</span>
+      <div class="seg" data-key="dir">
+        <button data-val="fwd">Chongqing → Shanghai</button>
+        <button data-val="rev">Shanghai → Chongqing</button>
+      </div>
+    </div>
+    <div class="ctl">
+      <span class="ctl-lbl">Middle stop</span>
+      <div class="seg" data-key="via">
+        <button data-val="xian">Xi'an</button>
+        <button data-val="wh">Wuhan</button>
+      </div>
+    </div>
+    <div class="ctl">
+      <span class="ctl-lbl">Detours</span>
+      <div class="chips">
+        <button class="chip-t" data-key="zjj" aria-pressed="false">🏔️ Avatar mtns</button>
+        <button class="chip-t" data-key="zc" aria-pressed="false">💎 Zhecheng</button>
+      </div>
+    </div>
+    <button class="share" id="shareBtn" title="Copy a link to this exact plan">🔗 Share plan</button>
+  </div>
+</section>
+
+<main id="app">
+  <section class="view" id="v-overview"></section>
+  <section class="view" id="v-days"></section>
+  <section class="view" id="v-places"></section>
+  <section class="view" id="v-trains"></section>
+  <section class="view" id="v-flights"></section>
+  <section class="view" id="v-detours"></section>
+  <section class="view" id="v-info"></section>
+</main>
+
+<footer class="foot" id="foot"></footer>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="vendor/leaflet.js"></script>
+<script src="data.js"></script>
+<script src="credits.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
