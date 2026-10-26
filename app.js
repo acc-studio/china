@@ -6,7 +6,7 @@
   const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
   /* ---------- language ---------- */
-  const TABS = ["overview", "days", "places", "trains", "flights", "detours", "info"];
+  const TABS = ["overview", "days", "places", "food", "trains", "flights", "detours", "info"];
   const Q = new URLSearchParams(location.search);
   let LANG = Q.get("lang");
   if (LANG !== "tr" && LANG !== "en") {
@@ -77,12 +77,12 @@
   }
 
   /* ---------- state ---------- */
-  const S = { w: "A", dir: "fwd", via: "xian", zjj: false, zc: false, pax: 1 };
+  const S = { w: "A", dir: "fwd", via: "xian", zjj: false, zc: false, zz: false, pax: 1 };
   let tab = "overview", placeFilter = "route";
   if (Q.get("w") === "B") S.w = "B";
   if (Q.get("dir") === "rev") S.dir = "rev";
   if (Q.get("via") === "wh") S.via = "wh";
-  S.zjj = Q.get("zjj") === "1"; S.zc = Q.get("zc") === "1";
+  S.zjj = Q.get("zjj") === "1"; S.zc = Q.get("zc") === "1"; S.zz = !S.zc && Q.get("zz") === "1";
   { const p = parseInt(Q.get("pax"), 10); if (p > 0 && p < 20) S.pax = p; }
   { const h = location.hash.slice(1); if (TABS.includes(h)) tab = h; }
   function writeURL() {
@@ -93,12 +93,14 @@
     if (S.via !== "xian") q.set("via", S.via);
     if (S.zjj) q.set("zjj", "1");
     if (S.zc) q.set("zc", "1");
+    if (S.zz) q.set("zz", "1");
     if (S.pax !== 1) q.set("pax", S.pax);
     history.replaceState(null, "", location.pathname + "?" + q.toString() + "#" + tab);
   }
 
   /* ---------- model ---------- */
-  const city = (code) => code === "XIAN" ? T.cities.MID_XIAN : code === "WH" ? T.cities.MID_WH : T.cities[code];
+  const city = (code) => code === "XIAN" ? T.cities.MID_XIAN : code === "WH" ? T.cities.MID_WH : code === "ZZ" ? T.zz : T.cities[code];
+  const toDur = (n) => `${Math.floor(n / 60)}h${String(n % 60).padStart(2, "0")}`;
   const sn = (c) => c.short || c.name.split(" · ")[0];
   const SLUG = { CKG: "chongqing", XIAN: "xian", WH: "wuhan", BJ: "beijing", SH: "shanghai", ZJJ: "zhangjiajie", SQ: "shangqiu" };
   const AIR = { CKG: "CKG", TFU: "TFU", SH: "PVG", XIAN: "XIY", ZJJ: "DYG", IST: "IST" };
@@ -134,12 +136,20 @@
       const a = stops[i - 1].code, b = stops[i].code, k = `${a}-${b}`;
       legs.push({ k, a, b, d: T.legs[k], date: stops[i].arrive, path: pathFor(a, b), to: stops[i] });
     }
+    if (S.zz && !S.zc) {
+      const L = legs.find((l) => (l.a === mid && l.b === "BJ") || (l.a === "BJ" && l.b === mid));
+      if (L) {
+        const k1 = `${L.a}-ZZ`, k2 = `ZZ-${L.b}`, d1 = T.legs[k1], d2 = T.legs[k2];
+        L.segs = [{ k: k1, a: L.a, b: "ZZ", d: d1, date: L.date, to: L.to }, { k: k2, a: "ZZ", b: L.b, d: d2, date: L.date, to: L.to }];
+        L.d = { rec: [`${d1.rec[0]} + ${d2.rec[0]}`, d1.rec[1], d1.rec[2], d2.rec[3], d2.rec[4], toDur(mins(d1.rec[5]) + mins(d2.rec[5])), d1.rec[6] + d2.rec[6], null], alts: [], note: "", daily: 0 };
+      }
+    }
     const rail = legs.filter((l) => !l.d.flight), fl = legs.filter((l) => l.d.flight);
     return {
       W, stops, legs, key,
       railMin: rail.reduce((s, l) => s + mins(l.d.rec[5]), 0),
       railYen: rail.reduce((s, l) => s + (l.d.rec[6] || 0), 0),
-      railYen1: rail.reduce((s, l) => s + (l.d.rec[7] || 0), 0),
+      railYen1: rail.reduce((s, l) => s + (l.d.rec[7] || 0), 0), has1: rail.every((l) => l.d.rec[7]),
       flightEur: fl.reduce((s, l) => s + (l.d.eur || 0), 0),
       nRail: rail.length, nFlight: fl.length
     };
@@ -187,7 +197,8 @@
     const b = e.target.closest("button"); if (!b) return;
     S[seg.dataset.key] = b.dataset.val; update();
   }));
-  $$(".chip-t").forEach((b) => b.addEventListener("click", () => { S[b.dataset.key] = !S[b.dataset.key]; update(); }));
+  function toggle(k) { S[k] = !S[k]; if (k === "zz" && S.zz) S.zc = false; if (k === "zc" && S.zc) S.zz = false; }
+  $$(".chip-t").forEach((b) => b.addEventListener("click", () => { toggle(b.dataset.key); update(); }));
   $("#langBtn").addEventListener("click", () => { setLang(LANG === "tr" ? "en" : "tr"); $("#foot").innerHTML = footer(); update(); showTab(tab); });
   $("#shareBtn").addEventListener("click", async () => {
     writeURL();
@@ -271,6 +282,7 @@
           <div class="card"><h3>${o.jumpT}</h3>
             <div class="links">
               <a class="lnk pri" href="#days" data-tab="days">${o.jump.days}</a>
+              <a class="lnk" href="#food" data-tab="food">${o.jump.food}</a>
               <a class="lnk" href="#trains" data-tab="trains">${o.jump.trains}</a>
               <a class="lnk" href="#flights" data-tab="flights">${o.jump.flights}</a>
               <a class="lnk" href="#detours" data-tab="detours">${o.jump.detours}</a>
@@ -284,7 +296,7 @@
   function ribbon(R) {
     let h = `<div class="ribbon">`;
     R.stops.forEach((s, i) => {
-      if (i > 0) { const l = R.legs[i - 1]; h += `<div class="rleg">${l.d.flight ? "✈️" : "🚄"} ${esc(dur(l.d.rec[5]))}</div>`; }
+      if (i > 0) { const l = R.legs[i - 1]; h += `<div class="rleg">${l.segs ? `🚄 ${esc(dur(l.segs[0].d.rec[5]))} · 💎 ${esc(sn(T.zz))} · ${esc(dur(l.segs[1].d.rec[5]))}` : `${l.d.flight ? "✈️" : "🚄"} ${esc(dur(l.d.rec[5]))}`}</div>`; }
       h += `<div class="rstop" style="--c:${s.c.color}"><div class="dot">${s.c.emoji}</div><div class="nm">${esc(sn(s.c))}</div><div class="dt">${fmtShort(s.arrive)} – ${fmtShort(s.depart)}</div><span class="nt">${U.nights(s.n)}</span></div>`;
     });
     return h + `</div>`;
@@ -315,7 +327,7 @@
           cls += " travel";
           badges = `<span class="badge tr">${l.d.flight ? u.fly : u.train}</span>` + badges;
           const late = !l.d.flight && /^(1[89]|2\d)/.test(l.d.rec[4]);
-          body = `<div class="t">${esc(sn(R.stops[i - 1].c))} → ${esc(sn(s.c))}</div>${miniTicket(l)}<p>${late ? (s.code === "ZJJ" ? u.lateZJJ : u.late) : esc(plan.a)}</p>`;
+          body = `<div class="t">${esc(sn(R.stops[i - 1].c))} → ${esc(sn(s.c))}</div>${l.segs ? miniTicket(l.segs[0]) + `<p class="tip">💎 ${esc(U.zz.day(l.segs[0].d.rec[4], l.segs[1].d.rec[2]))}</p>` + miniTicket(l.segs[1]) : miniTicket(l)}<p>${late ? (s.code === "ZJJ" ? u.lateZJJ : u.late) : esc(plan.a)}</p>`;
         } else {
           body = `<div class="t">${esc(sn(s.c))}</div><p>${esc(plan.d[(k - 1) % plan.d.length])}</p>`;
         }
@@ -334,15 +346,35 @@
     const order = ["CKG", "XIAN", "WH", "ZJJ", "SQ", "BJ", "SH"];
     const btn = (v, label) => `<button data-pf="${v}" class="${placeFilter === v ? "on" : ""}">${label}</button>`;
     let h = `<div class="sh"><div><h2>${u.h}</h2><p>${u.intro}</p></div></div>
-      <div class="filters">${btn("route", u.route)}${btn("all", u.all)}${order.map((c) => btn(c, `${city(c).emoji} ${esc(sn(city(c)))}`)).join("")}</div><div class="pgrid">`;
-    T.places.filter((p) => placeFilter === "all" ? true : placeFilter === "route" ? onRoute.has(p.c) : p.c === placeFilter)
+      <div class="filters">${btn("route", u.route)}${btn("local", u.local)}${btn("all", u.all)}${order.map((c) => btn(c, `${city(c).emoji} ${esc(sn(city(c)))}`)).join("")}</div><div class="pgrid">`;
+    T.places.map((p, i) => Object.assign({ i }, p, { local: window.TRIP.places[i].local })).filter((p) => placeFilter === "all" ? true : placeFilter === "route" ? onRoute.has(p.c) : placeFilter === "local" ? p.local && onRoute.has(p.c) : p.c === placeFilter)
       .sort((a, b) => order.indexOf(a.c) - order.indexOf(b.c))
       .forEach((p) => {
         const c = city(p.c), off = !onRoute.has(p.c);
+        if (p.local) { h += `<article class="pcard lcard${off && placeFilter === "all" ? " dim" : ""}" style="--c:${c.color}"><div class="bd"><div class="lhead"><span class="lico">${p.local}</span><span class="ct">${c.emoji} ${esc(sn(c))} · ${u.localTag}</span></div><h4>${esc(p.t)}<span class="zh">${esc(p.zh)}</span></h4><p>${esc(p.d)}</p><div class="tm">⏱ ${esc(p.time)}</div></div></article>`; return; }
         h += `<article class="pcard${off && placeFilter === "all" ? " dim" : ""}" style="--c:${c.color}"><div class="ph"><img src="${img(p.img)}" alt="${esc(p.t)}" loading="lazy"><span class="ct">${c.emoji} ${esc(sn(c))}</span>${off ? `<span class="off">${u.optional}</span>` : ""}</div>
           <div class="bd"><h4>${esc(p.t)}<span class="zh">${esc(p.zh)}</span></h4><p>${esc(p.d)}</p><div class="tm">⏱ ${esc(p.time)}</div></div></article>`;
       });
     return h + `</div>`;
+  }
+
+  function vFood(R) {
+    const u = U.food, onRoute = new Set(R.stops.map((s) => s.code));
+    if (S.zz) onRoute.add("SQ");
+    const order = R.stops.map((s) => s.code).concat(["CKG", "XIAN", "WH", "ZJJ", "SQ", "BJ", "SH"].filter((c) => !R.stops.some((s) => s.code === c)));
+    const base = window.TRIP.food;
+    const list = (arr, bi, key) => arr.map((x, j) => `<li><b>${esc(x[0])}</b><span class="zh">${esc(x[1])}</span>${base[bi][key][j][3] === "p" ? ` <span class="pork">🐖 ${u.pork}</span>` : ""}<br><span class="mut">${esc(x[2])}</span></li>`).join("");
+    let h = `<div class="sh"><div><h2>${u.h}</h2><p>${u.intro}</p></div></div>`, shownOther = false;
+    order.forEach((code) => {
+      const i = T.food.findIndex((f) => f.c === code); if (i < 0) return;
+      const f = T.food[i], c = city(code), off = !onRoute.has(code);
+      if (off && !shownOther) { h += `<h3 class="fother">${u.other}</h3>`; shownOther = true; }
+      const title = code === "SQ" ? `${c.emoji} ${u.henan}` : `${c.emoji} ${esc(c.name)}`;
+      const pics = [f.img, f.img2].filter(Boolean).map((k) => `<img src="${img(k)}" alt="" loading="lazy">`).join("");
+      h += `<div class="fcity${off ? " dim" : ""}" style="--c:${c.color}">${pics ? `<div class="fpics">${pics}</div>` : ""}<div class="fbody"><h3>${title}</h3>
+        <div class="fcols"><div><h4>${u.street}</h4><ul>${list(f.street, i, "street")}</ul></div><div><h4>${u.sit}</h4><ul>${list(f.sit, i, "sit")}</ul></div></div></div></div>`;
+    });
+    return h;
   }
 
   const altFare = (v) => v == null ? "—" : typeof v === "number" ? Y(v) : "~" + Y(parseInt(String(v).replace(/\D/g, ""), 10));
@@ -350,21 +382,23 @@
 
   function vTrains(R) {
     const u = U.trains, th = u.th;
+    const rides = [];
+    R.legs.forEach((l, i) => { if (l.segs) l.segs.forEach((sg, j) => rides.push(Object.assign({ n: `${i + 1}${"ab"[j]}` }, sg))); else rides.push(Object.assign({ n: i + 1 }, l)); });
     const g = gwLegs(R);
     const gwTxt = S.w === "A" ? (g.length ? u.gwLeg(fmt(g[0].date), esc(g[0].d.rec[0]), fmt(add(g[0].date, -15))) : u.gwNone) : "";
     let h = `<div class="sh"><div><h2>${u.h}</h2><p>${u.intro}</p></div></div>
       <div class="callout warn"><b>${u.warnT}</b>${u.warn(gwTxt)}</div>
       <div class="card" style="margin-bottom:18px"><table class="alts" style="margin:0"><tr><th>${th.date}</th><th>${th.ride}</th><th>${th.train}</th><th class="hide-s">${th.time}</th><th>${th.second}</th></tr>
-      ${R.legs.map((l) => `<tr><td>${fmt(l.date)}</td><td>${esc(sn(city(l.a)))} → ${esc(sn(city(l.b)))}</td><td><b>${esc(l.d.rec[0])}</b></td><td class="hide-s">${esc(l.d.rec[2])}–${esc(l.d.rec[4])} (${esc(dur(l.d.rec[5]))})</td><td>${l.d.flight ? "~" + E(l.d.eur) : Y(l.d.rec[6])}</td></tr>`).join("")}
+      ${rides.map((l) => `<tr><td>${fmt(l.date)}</td><td>${esc(sn(city(l.a)))} → ${esc(sn(city(l.b)))}</td><td><b>${esc(l.d.rec[0])}</b></td><td class="hide-s">${esc(l.d.rec[2])}–${esc(l.d.rec[4])} (${esc(dur(l.d.rec[5]))})</td><td>${l.d.flight ? "~" + E(l.d.eur) : Y(l.d.rec[6])}</td></tr>`).join("")}
       <tr><td colspan="2"><b>${u.total}</b></td><td></td><td class="hide-s"><b>${hm(R.railMin)}</b> ${u.onTrains}</td><td><b>${Y(R.railYen)}</b>${R.flightEur ? ` + ${E(R.flightEur)}` : ""}</td></tr></table>
-      <p class="note-in">${u.first(Ytxt(R.railYen1))} ${U.tryNote(FX.eur, FX.cny, fxWhen(), FX.live)}</p></div>`;
-    R.legs.forEach((l, i) => {
+      <p class="note-in">${R.has1 ? u.first(Ytxt(R.railYen1)) : ""} ${U.tryNote(FX.eur, FX.cny, fxWhen(), FX.live)}</p></div>`;
+    rides.forEach((l) => {
       const r = l.d.rec, c = l.to.c;
       const links = l.d.flight
         ? A("gf", gfURL([[iso(l.date), AIR[l.a], AIR[l.b]]]), "Google Flights") + A("sky", sky1(SKY[l.a], SKY[l.b], iso(l.date)), "Skyscanner") + A("", "https://www.trip.com/flights/", u.tripFl)
         : A("pri", tripRoute(l.a, l.b), u.book) + A("", "https://www.12306.cn/en/index.html", u.official);
       h += `<div class="ticket" style="--c:${c.color}"><div class="main">
-        <div class="hd"><span class="num">${u.ride(i + 1)}</span><span class="date">${fmt(l.date)}</span><span class="mut">· ${l.d.flight ? u.flight : u.perDay(l.d.daily)} · ${l.d.flight ? u.anyTime : u.opens(fmt(add(l.date, -15)))}</span></div>
+        <div class="hd"><span class="num">${u.ride(l.n)}</span><span class="date">${fmt(l.date)}</span><span class="mut">· ${l.d.flight ? u.flight : u.perDay(l.d.daily)} · ${l.d.flight ? u.anyTime : u.opens(fmt(add(l.date, -15)))}</span></div>
         <div class="route"><div class="st"><b>${esc(r[2])}</b><span>${esc(r[1])}</span></div><div class="mid"><span class="tn">${esc(r[0])}</span><div class="line"></div>${esc(dur(r[5]))}</div><div class="st r"><b>${esc(r[4]) || "—"}</b><span>${esc(r[3])}</span></div></div>
         <p class="note-in">${esc(l.d.note)}</p>
         <table class="alts"><tr><th>${th.also}</th><th>${th.from}</th><th class="hide-s">${th.to}</th><th>${th.time}</th><th>${th.fare}</th></tr>
@@ -417,28 +451,34 @@
     const base = T.nights[S.w][S.dir], u = U.det;
     const diff = (withK, withoutK) => {
       const a = base[withK], b = base[withoutK], out = [];
-      Object.keys(b).forEach((k) => { const d = (a[k] || 0) - b[k]; if (d) out.push(`${sn(city(k === "MID" ? (S.via === "xian" ? "XIAN" : "WH") : k))} ${d > 0 ? "+" : "−"}${Math.abs(d)}`); });
+      Object.keys(b).forEach((k) => { const d = (a[k] || 0) - b[k]; if (d) out.push(`${sn(city(k === "MID" ? (S.via === "xian" ? "XIAN" : "WH") : k))} ${d > 0 ? "+" : "−"}${U.nights(Math.abs(d))}`); });
       return out.join(", ");
     };
     const withZ = S.zc ? "both" : "zjj", noZ = S.zc ? "zc" : "none";
     const withC = S.zjj ? "both" : "zc", noC = S.zjj ? "zjj" : "none";
     const xian = S.via === "xian", fwd = S.dir === "fwd";
     const dz = diff(withZ, noZ), dc = diff(withC, noC);
+    const midC = S.via === "xian" ? "XIAN" : "WH", z1 = T.legs[fwd ? `${midC}-ZZ` : "BJ-ZZ"].rec, z2 = T.legs[fwd ? "ZZ-BJ" : `ZZ-${midC}`].rec;
+    const zzHow = (fwd ? u.zzHowFwd : u.zzHowRev)(esc(sn(city(midC))), `${z1[0]} ${z1[2]}–${z1[4]}`, `${z2[0]} ${z2[2]}–${z2[4]}`);
     return `<div class="sh"><div><h2>${u.h}</h2><p>${u.intro}</p></div></div>
       <div class="dcard"><div class="imgs"><img src="${img("avatar")}" alt="" loading="lazy"><img src="${img("bailong")}" alt="" loading="lazy"><img src="${img("tianmen")}" alt="" loading="lazy"></div>
         <div class="bd"><span class="badge tr" style="--c:var(--green)">${u.zBadge}</span><h3>${u.zT}</h3><p>${u.zP}</p>
           <ul><li><b>${u.get}</b> ${fwd ? u.zHowFwd(xian) : u.zHowRev(xian)}</li>
           <li><b>${u.do}</b> ${u.zDo}</li>
           <li><b>${u.stay}</b> ${u.zStay}</li>
-          <li><b>${u.costs}</b> ${dz ? dz + " " + u.nightsWord : u.none}${S.w === "A" && fwd ? u.zGW : ""}.</li></ul>
+          <li><b>${u.costs}</b> ${dz || u.none}${S.w === "A" && fwd ? u.zGW : ""}.</li></ul>
           <button class="addbtn zjj ${S.zjj ? "on" : ""}" data-toggle="zjj">${S.zjj ? u.added : u.add}</button></div></div>
       <div class="dcard"><div class="imgs"><img src="${img("labdiamond")}" alt="" loading="lazy"><img src="${img("zhecheng")}" alt="" loading="lazy"><img src="${img("shangqiu")}" alt="" loading="lazy"></div>
         <div class="bd"><span class="badge tr" style="--c:var(--cyan)">${u.cBadge}</span><h3>${u.cT}</h3><p>${u.cP}</p>
           <ul><li><b>${u.get}</b> ${fwd ? u.cHowFwd(xian) : u.cHowRev(xian)}</li>
           <li><b>${u.do}</b> ${u.cDo}</li>
           <li><b>${u.tips}</b> ${u.cTips}</li>
-          <li><b>${u.costs}</b> ${dc ? dc + " " + u.nightsWord : u.none}${u.cCar}.</li></ul>
+          <li><b>${u.costs}</b> ${dc || u.none}${u.cCar}.</li></ul>
           <button class="addbtn zc ${S.zc ? "on" : ""}" data-toggle="zc">${S.zc ? u.added : u.add}</button></div></div>
+      <div class="dcard"><div class="imgs one"><img src="${img("labdiamond")}" alt="" loading="lazy"></div>
+        <div class="bd"><span class="badge tr" style="--c:var(--cyan)">${u.zzBadge}</span><h3>${u.zzT}</h3><p>${u.zzP}</p>
+          <ul><li><b>${u.get}</b> ${zzHow}</li><li><b>${u.do}</b> ${u.zzDo}</li><li>${u.zzVs}</li></ul>
+          <button class="addbtn zc ${S.zz ? "on" : ""}" data-toggle="zz">${S.zz ? u.added : u.add}</button></div></div>
       <div class="callout info"><b>${u.alsoT}</b>${u.also}</div>`;
   }
 
@@ -497,6 +537,7 @@
         .bindTooltip(`${esc(l.d.rec[0])} · ${esc(dur(l.d.rec[5]))} · ${fmt(l.date)}`, { sticky: true });
       all.push.apply(all, l.path.pts);
     });
+    if (R.legs.some((l) => l.segs)) L.marker(T.zz.ll, { icon: L.divIcon({ className: "", html: `<div class="mk"><span class="n" style="background:${T.zz.color}">💎</span><span class="l">${esc(sn(T.zz))}</span></div>`, iconSize: [0, 0] }), zIndexOffset: 900 }).addTo(layer);
     T.waypoints.forEach((w) => {
       L.marker(w.ll, { icon: L.divIcon({ className: "", html: `<div class="wp"></div>`, iconSize: [10, 10], iconAnchor: [5, 5] }) }).addTo(layer)
         .bindPopup(`<div class="pop"><div><b>${esc(w.n)}</b> <span class="zh">${esc(w.zh)}</span><br>${esc(w.t)}</div></div>`);
@@ -532,6 +573,7 @@
     $("#v-overview").innerHTML = vOverview(R);
     $("#v-days").innerHTML = vDays(R);
     $("#v-places").innerHTML = vPlaces(R);
+    $("#v-food").innerHTML = vFood(R);
     $("#v-trains").innerHTML = vTrains(R);
     $("#v-flights").innerHTML = vFlights(R);
     $("#v-detours").innerHTML = vDetours(R);
@@ -543,7 +585,7 @@
     const pf = e.target.closest("[data-pf]");
     if (pf) { placeFilter = pf.dataset.pf; $("#v-places").innerHTML = vPlaces(build()); return; }
     const tg = e.target.closest("[data-toggle]");
-    if (tg) { S[tg.dataset.toggle] = !S[tg.dataset.toggle]; update(); toast(S[tg.dataset.toggle] ? U.toast.added : U.toast.removed); return; }
+    if (tg) { toggle(tg.dataset.toggle); update(); toast(S[tg.dataset.toggle] ? U.toast.added : U.toast.removed); return; }
     const px = e.target.closest("[data-pax]");
     if (px) { S.pax = Math.max(1, Math.min(19, S.pax + Number(px.dataset.pax))); writeURL(); $("#v-flights").innerHTML = vFlights(build()); }
   });

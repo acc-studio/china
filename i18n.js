@@ -275,3 +275,33 @@ window.I18N = {
     credits: "Fotoğraf kaynakları (Wikimedia Commons)"
   }
 };
+
+/* Food tab, local picks, Zhengzhou day stop */
+(function (I) {
+  const en = I.en, tr = I.tr;
+  en.tabs.food = "Food"; tr.tabs.food = "Yemek";
+  en.ov.jump.food = "🍜 Food"; tr.ov.jump.food = "🍜 Yemek";
+  en.b.zz = "💎 Zhengzhou stop"; tr.b.zz = "💎 Zhengzhou molası";
+  en.places.local = "🧭 Local picks"; tr.places.local = "🧭 Yerel öneriler";
+  en.places.localTag = "local"; tr.places.localTag = "yerel";
+  en.food = { h: "Food", intro: "Street eats and sit-down picks at each stop. Pork is common; Xi'an's Muslim Quarter is best for halal food.", street: "Street food", sit: "Sit-down", pork: "pork", henan: "Henan", other: "Optional stops" };
+  tr.food = { h: "Yemek", intro: "Her durakta sokak lezzetleri ve oturmalı mekânlar. Domuz eti yaygın; helal yemek için en iyi yer Şian'ın Müslüman Mahallesi.", street: "Sokak lezzetleri", sit: "Oturmalı", pork: "domuz", henan: "Henan", other: "İsteğe bağlı duraklar" };
+  en.zz = { name: "Zhengzhou", day: (a, b) => `Zhengzhou stop (${a}–${b}): leave bags at the station, then Didi to the Lab-grown Diamond Trading Centre in the Airport Zone (about 40 min).`, stop: "stop" };
+  tr.zz = { name: "Zhengzhou", day: (a, b) => `Zhengzhou molası (${a}–${b}): bavulları istasyonda bırakın, Didi ile Havalimanı Bölgesi'ndeki Laboratuvar Elması Ticaret Merkezi'ne gidin (yaklaşık 40 dk).`, stop: "mola" };
+  Object.assign(en.det, {
+    zzBadge: "💎 Zhengzhou · Henan", zzT: "Diamond day stop",
+    zzP: "Break the train ride at Zhengzhou East for about 5 hours. No extra night, about ¥30 more.",
+    zzHowFwd: (mid, t1, t2) => `${mid} → Zhengzhou East (${t1}), afternoon train to Beijing West (${t2}).`,
+    zzHowRev: (mid, t1, t2) => `Beijing West → Zhengzhou East (${t1}), afternoon train to ${mid} (${t2}).`,
+    zzDo: "Zhengzhou Lab-grown Diamond Trading Centre (opened 2025, Airport Zone, ~40 min by car). Mostly wholesale, but it sells retail too.",
+    zzVs: "Easier than Zhecheng and no extra night, but you see showrooms, not factories. You can't combine the two."
+  });
+  Object.assign(tr.det, {
+    zzBadge: "💎 Zhengzhou · Henan", zzT: "Elmas için gün içi mola",
+    zzP: "Tren yolculuğunu Zhengzhou East'te yaklaşık 5 saat bölün. Ekstra gece yok, yaklaşık ¥30 fark.",
+    zzHowFwd: (mid, t1, t2) => `${mid} → Zhengzhou East (${t1}), öğleden sonra Beijing West'e tren (${t2}).`,
+    zzHowRev: (mid, t1, t2) => `Beijing West → Zhengzhou East (${t1}), öğleden sonra ${mid} yönüne tren (${t2}).`,
+    zzDo: "Zhengzhou Laboratuvar Elması Uluslararası Ticaret Merkezi (2025'te açıldı, Havalimanı Bölgesi, arabayla ~40 dk). Çoğunlukla toptan, ama perakende de satıyor.",
+    zzVs: "Zhecheng'den kolay ve ekstra gece yok; ama fabrika değil showroom görürsünüz. İkisi birlikte seçilemez."
+  });
+})(window.I18N);
