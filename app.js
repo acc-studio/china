@@ -6,7 +6,7 @@
   const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
   /* ---------- language ---------- */
-  const TABS = ["overview", "days", "places", "food", "trains", "flights", "detours", "info"];
+  const TABS = ["overview", "days", "todo", "trains", "flights", "detours", "info"];
   const Q = new URLSearchParams(location.search);
   let LANG = Q.get("lang");
   if (LANG !== "tr" && LANG !== "en") {
@@ -78,13 +78,13 @@
 
   /* ---------- state ---------- */
   const S = { w: "A", dir: "fwd", via: "xian", zjj: false, zc: false, zz: false, pax: 1 };
-  let tab = "overview", placeFilter = "route";
+  let tab = "overview", placeFilter = "route", todoSub = "tour";
   if (Q.get("w") === "B") S.w = "B";
   if (Q.get("dir") === "rev") S.dir = "rev";
   if (Q.get("via") === "wh") S.via = "wh";
   S.zjj = Q.get("zjj") === "1"; S.zc = Q.get("zc") === "1"; S.zz = !S.zc && Q.get("zz") === "1";
   { const p = parseInt(Q.get("pax"), 10); if (p > 0 && p < 20) S.pax = p; }
-  { const h = location.hash.slice(1); if (TABS.includes(h)) tab = h; }
+  { const h = location.hash.slice(1); if (TABS.includes(h)) tab = h; else if (h === "places") tab = "todo"; else if (h === "food") { tab = "todo"; todoSub = "food"; } }
   function writeURL() {
     const q = new URLSearchParams();
     q.set("lang", LANG);
@@ -282,7 +282,7 @@
           <div class="card"><h3>${o.jumpT}</h3>
             <div class="links">
               <a class="lnk pri" href="#days" data-tab="days">${o.jump.days}</a>
-              <a class="lnk" href="#food" data-tab="food">${o.jump.food}</a>
+              <a class="lnk" href="#todo" data-tab="todo">${o.jump.todo}</a>
               <a class="lnk" href="#trains" data-tab="trains">${o.jump.trains}</a>
               <a class="lnk" href="#flights" data-tab="flights">${o.jump.flights}</a>
               <a class="lnk" href="#detours" data-tab="detours">${o.jump.detours}</a>
@@ -341,41 +341,48 @@
     return h;
   }
 
-  function vPlaces(R) {
-    const onRoute = new Set(R.stops.map((s) => s.code)), u = U.places;
+  /* Things To Do: food, tourism and life, with one shared city filter */
+  function vTodo(R) {
+    const u = U.todo, onRoute = new Set(R.stops.map((s) => s.code));
+    if (S.zz) onRoute.add("SQ");
     const order = ["CKG", "XIAN", "WH", "ZJJ", "SQ", "BJ", "SH"];
+    const inFilter = (c) => placeFilter === "all" ? true : placeFilter === "route" ? onRoute.has(c) : c === placeFilter;
+    const places = T.places.map((p, i) => Object.assign({}, p, { local: window.TRIP.places[i].local, img: window.TRIP.places[i].img }));
+    const tour = places.filter((p) => !p.local && inFilter(p.c)).sort((a, b) => order.indexOf(a.c) - order.indexOf(b.c));
+    const life = places.filter((p) => p.local && inFilter(p.c)).sort((a, b) => order.indexOf(a.c) - order.indexOf(b.c));
+    const foods = T.food.map((f, i) => ({ f, i })).filter(({ f }) => inFilter(f.c));
+    const nFood = foods.reduce((s, { f }) => s + f.street.length + f.sit.length, 0);
+    const sub = (k, label, n) => `<button data-sub="${k}" class="${todoSub === k ? "on" : ""}">${label} <span class="cnt">${n}</span></button>`;
     const btn = (v, label) => `<button data-pf="${v}" class="${placeFilter === v ? "on" : ""}">${label}</button>`;
     let h = `<div class="sh"><div><h2>${u.h}</h2><p>${u.intro}</p></div></div>
-      <div class="filters">${btn("route", u.route)}${btn("local", u.local)}${btn("all", u.all)}${order.map((c) => btn(c, `${city(c).emoji} ${esc(sn(city(c)))}`)).join("")}</div><div class="pgrid">`;
-    T.places.map((p, i) => Object.assign({ i }, p, { local: window.TRIP.places[i].local })).filter((p) => placeFilter === "all" ? true : placeFilter === "route" ? onRoute.has(p.c) : placeFilter === "local" ? p.local && onRoute.has(p.c) : p.c === placeFilter)
-      .sort((a, b) => order.indexOf(a.c) - order.indexOf(b.c))
-      .forEach((p) => {
-        const c = city(p.c), off = !onRoute.has(p.c);
-        if (p.local) { h += `<article class="pcard lcard${off && placeFilter === "all" ? " dim" : ""}" style="--c:${c.color}"><div class="bd"><div class="lhead"><span class="lico">${p.local}</span><span class="ct">${c.emoji} ${esc(sn(c))} · ${u.localTag}</span></div><h4>${esc(p.t)}<span class="zh">${esc(p.zh)}</span></h4><p>${esc(p.d)}</p><div class="tm">⏱ ${esc(p.time)}</div></div></article>`; return; }
-        h += `<article class="pcard${off && placeFilter === "all" ? " dim" : ""}" style="--c:${c.color}"><div class="ph"><img src="${img(p.img)}" alt="${esc(p.t)}" loading="lazy"><span class="ct">${c.emoji} ${esc(sn(c))}</span>${off ? `<span class="off">${u.optional}</span>` : ""}</div>
+      <div class="subtabs">${sub("food", u.food, nFood)}${sub("tour", u.tour, tour.length)}${sub("life", u.life, life.length)}</div>
+      <div class="filters">${btn("route", u.route)}${btn("all", u.all)}${order.map((c) => btn(c, `${city(c).emoji} ${esc(code2name(c))}`)).join("")}</div>`;
+    const offTag = (c) => !onRoute.has(c) ? `<span class="off">${u.optional}</span>` : "";
+    if (todoSub === "tour") {
+      h += `<div class="pgrid">` + tour.map((p) => {
+        const c = city(p.c);
+        return `<article class="pcard${!onRoute.has(p.c) && placeFilter === "all" ? " dim" : ""}" style="--c:${c.color}"><div class="ph"><img src="${img(p.img)}" alt="${esc(p.t)}" loading="lazy"><span class="ct">${c.emoji} ${esc(code2name(p.c))}</span>${offTag(p.c)}</div>
           <div class="bd"><h4>${esc(p.t)}<span class="zh">${esc(p.zh)}</span></h4><p>${esc(p.d)}</p><div class="tm">⏱ ${esc(p.time)}</div></div></article>`;
+      }).join("") + `</div>`;
+    } else if (todoSub === "life") {
+      h += `<div class="pgrid">` + life.map((p) => {
+        const c = city(p.c);
+        return `<article class="pcard lcard${!onRoute.has(p.c) && placeFilter === "all" ? " dim" : ""}" style="--c:${c.color}"><div class="bd"><div class="lhead"><span class="lico">${p.local}</span><span class="ct">${c.emoji} ${esc(code2name(p.c))}</span>${offTag(p.c)}</div><h4>${esc(p.t)}<span class="zh">${esc(p.zh)}</span></h4><p>${esc(p.d)}</p><div class="tm">⏱ ${esc(p.time)}</div></div></article>`;
+      }).join("") + `</div>`;
+    } else {
+      const base = window.TRIP.food;
+      const list = (arr, bi, key) => arr.map((x, j) => `<li><b>${esc(x[0])}</b><span class="zh">${esc(x[1])}</span>${base[bi][key][j] && base[bi][key][j][3] === "p" ? ` <span class="pork">🐖 ${u.pork}</span>` : ""}<br><span class="mut">${esc(x[2])}</span></li>`).join("");
+      h += `<p class="mut fnote">${u.foodNote}</p>`;
+      foods.sort((a, b) => order.indexOf(a.f.c) - order.indexOf(b.f.c)).forEach(({ f, i }) => {
+        const c = city(f.c), off = !onRoute.has(f.c);
+        const pics = [f.img, f.img2].filter(Boolean).map((k) => `<img src="${img(k)}" alt="" loading="lazy">`).join("");
+        h += `<div class="fcity${off && placeFilter === "all" ? " dim" : ""}" style="--c:${c.color}">${pics ? `<div class="fpics">${pics}</div>` : ""}<div class="fbody"><h3>${c.emoji} ${esc(f.c === "SQ" ? u.henan : c.name)} ${offTag(f.c)}</h3>
+          <div class="fcols"><div><h4>${u.street}</h4><ul>${list(f.street, i, "street")}</ul></div><div><h4>${u.sit}</h4><ul>${list(f.sit, i, "sit")}</ul></div></div></div></div>`;
       });
-    return h + `</div>`;
-  }
-
-  function vFood(R) {
-    const u = U.food, onRoute = new Set(R.stops.map((s) => s.code));
-    if (S.zz) onRoute.add("SQ");
-    const order = R.stops.map((s) => s.code).concat(["CKG", "XIAN", "WH", "ZJJ", "SQ", "BJ", "SH"].filter((c) => !R.stops.some((s) => s.code === c)));
-    const base = window.TRIP.food;
-    const list = (arr, bi, key) => arr.map((x, j) => `<li><b>${esc(x[0])}</b><span class="zh">${esc(x[1])}</span>${base[bi][key][j][3] === "p" ? ` <span class="pork">🐖 ${u.pork}</span>` : ""}<br><span class="mut">${esc(x[2])}</span></li>`).join("");
-    let h = `<div class="sh"><div><h2>${u.h}</h2><p>${u.intro}</p></div></div>`, shownOther = false;
-    order.forEach((code) => {
-      const i = T.food.findIndex((f) => f.c === code); if (i < 0) return;
-      const f = T.food[i], c = city(code), off = !onRoute.has(code);
-      if (off && !shownOther) { h += `<h3 class="fother">${u.other}</h3>`; shownOther = true; }
-      const title = code === "SQ" ? `${c.emoji} ${u.henan}` : `${c.emoji} ${esc(c.name)}`;
-      const pics = [f.img, f.img2].filter(Boolean).map((k) => `<img src="${img(k)}" alt="" loading="lazy">`).join("");
-      h += `<div class="fcity${off ? " dim" : ""}" style="--c:${c.color}">${pics ? `<div class="fpics">${pics}</div>` : ""}<div class="fbody"><h3>${title}</h3>
-        <div class="fcols"><div><h4>${u.street}</h4><ul>${list(f.street, i, "street")}</ul></div><div><h4>${u.sit}</h4><ul>${list(f.sit, i, "sit")}</ul></div></div></div></div>`;
-    });
+    }
     return h;
   }
+  const code2name = (c) => c === "SQ" ? U.todo.henan : sn(city(c));
 
   const altFare = (v) => v == null ? "—" : typeof v === "number" ? Y(v) : "~" + Y(parseInt(String(v).replace(/\D/g, ""), 10));
   const altName = (s) => String(s).replace(/^Rail:/, U.trains.rail);
@@ -572,8 +579,7 @@
     const R = build();
     $("#v-overview").innerHTML = vOverview(R);
     $("#v-days").innerHTML = vDays(R);
-    $("#v-places").innerHTML = vPlaces(R);
-    $("#v-food").innerHTML = vFood(R);
+    $("#v-todo").innerHTML = vTodo(R);
     $("#v-trains").innerHTML = vTrains(R);
     $("#v-flights").innerHTML = vFlights(R);
     $("#v-detours").innerHTML = vDetours(R);
@@ -583,7 +589,9 @@
   }
   document.addEventListener("click", (e) => {
     const pf = e.target.closest("[data-pf]");
-    if (pf) { placeFilter = pf.dataset.pf; $("#v-places").innerHTML = vPlaces(build()); return; }
+    if (pf) { placeFilter = pf.dataset.pf; $("#v-todo").innerHTML = vTodo(build()); return; }
+    const sb = e.target.closest("[data-sub]");
+    if (sb) { todoSub = sb.dataset.sub; $("#v-todo").innerHTML = vTodo(build()); return; }
     const tg = e.target.closest("[data-toggle]");
     if (tg) { toggle(tg.dataset.toggle); update(); toast(S[tg.dataset.toggle] ? U.toast.added : U.toast.removed); return; }
     const px = e.target.closest("[data-pax]");

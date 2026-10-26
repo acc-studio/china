@@ -305,3 +305,11 @@ window.I18N = {
     zzVs: "Zhecheng'den kolay ve ekstra gece yok; ama fabrika değil showroom görürsünüz. İkisi birlikte seçilemez."
   });
 })(window.I18N);
+
+/* Things To Do tab */
+(function (I) {
+  I.en.tabs.todo = "Things To Do"; I.tr.tabs.todo = "Yapılacaklar";
+  I.en.ov.jump.todo = "🎯 Things To Do"; I.tr.ov.jump.todo = "🎯 Yapılacaklar";
+  I.en.todo = { h: "Things To Do", intro: "What to eat, see and do at each stop. Pick a section, then filter by city.", food: "🍜 Food", tour: "🏛️ Tourism", life: "🌃 Life", route: "⭐ My route", all: "All", optional: "optional", street: "Street food", sit: "Sit-down", pork: "pork", henan: "Henan", foodNote: "Pork is common (marked 🐖). For halal food, head to Xi'an's Muslim Quarter or look for 清真 signs." };
+  I.tr.todo = { h: "Yapılacaklar", intro: "Her durakta ne yenir, ne görülür, ne yapılır. Bir bölüm seçin, sonra şehre göre filtreleyin.", food: "🍜 Yemek", tour: "🏛️ Turistik", life: "🌃 Yaşam", route: "⭐ Rotam", all: "Tümü", optional: "isteğe bağlı", street: "Sokak lezzetleri", sit: "Oturmalı", pork: "domuz", henan: "Henan", foodNote: "Domuz eti yaygın (🐖 ile işaretli). Helal yemek için Şian'ın Müslüman Mahallesi'ne gidin ya da 清真 tabelalarını arayın." };
+})(window.I18N);

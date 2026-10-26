@@ -196,167 +196,167 @@ window.TRIP_TR = {
   {
    "t": "Hongyadong",
    "time": "1–2 sa, karanlıkta",
-   "d": "Yamaçta altın gibi parlayan 11 katlı kazık evler."
+   "d": "Jialing yamaçlarında her gece altın rengi ışıklarla yanan 11 katlı ahşap kazık ev kompleksi. Klasik Çongçing fotoğrafı."
   },
   {
    "t": "Liziba monorayı",
    "time": "30 dk",
-   "d": "Bir apartmanın içinden geçen monoray."
+   "d": "2. hat bir apartmanın 6.–8. katlarının tam içinden geçer. Aşağıdaki seyir terasından izleyin."
   },
   {
    "t": "Ciqikou eski kasabası",
    "time": "2–3 sa",
-   "d": "Eski porselen limanı, bugün atıştırmalık sokağı."
+   "d": "Ming döneminden kalma porselen limanı, bugün atıştırmalık sokağı: mahua burgu tatlıları, acılı her şey, Sichuan operalı çay evleri."
   },
   {
    "t": "Çongçing hotpot'u",
    "time": "Her akşam",
-   "d": "Acılı, sığır yağlı et suyu. Yarısı acısız kazan isteyin."
+   "d": "Sığır içyağlı, ağzı uyuşturan Sichuan biberli et suyu. Çekingenler için yarısı acısız yuanyang kazan isteyin."
   },
   {
    "t": "Dazu Kaya Oymaları",
    "time": "Günübirlik, yön başına yaklaşık 1,5 sa",
-   "d": "9.–13. yüzyıldan UNESCO Budist kaya oymaları."
+   "d": "9.–13. yüzyıllardan kalma, UNESCO listesindeki Budist kaya oymaları; dev bir uzanan Buda dahil."
   },
   {
    "t": "Wulong Karst",
    "time": "Günübirlik, yön başına yaklaşık 2,5–3 sa",
-   "d": "Kanyon üzerinde üç dev doğal taş köprü."
+   "d": "Bir kanyonun üzerinde üç devasa doğal taş köprü. Transformers 4'ten hatırlayabilirsiniz."
   },
   {
    "t": "Terracotta Ordusu",
    "time": "Yarım gün",
-   "d": "MÖ 210'dan 8.000 gerçek boyutlu kil asker."
+   "d": "MÖ 210'dan beri İlk İmparator'u koruyan yaklaşık 8.000 gerçek boyutlu kil asker. 1 numaralı çukur insanı olduğu yere çiviler."
   },
   {
    "t": "Ming Surları",
    "time": "Bisikletle 2–3 sa",
-   "d": "Çin'in en iyi korunmuş surları. 14 km'lik turu sürün."
+   "d": "Çin'in en iyi korunmuş şehir surları. Üstünde bisiklet kiralayıp 14 km'lik turun tamamını yapın."
   },
   {
    "t": "Müslüman Mahallesi",
    "time": "Akşam",
-   "d": "Kuzu şiş, erişte ve Büyük Cami."
+   "d": "Kuzu şişlerin, roujiamo'nun, hurma çöreklerinin ve el açması eriştelerin tüttüğü sokaklar; bir de Büyük Cami."
   },
   {
    "t": "Büyük Yaban Kazı Pagodası",
    "time": "1–2 sa",
-   "d": "Tang dönemi pagodası, gece fıskiye gösterisi."
+   "d": "Xuanzang'ın Hindistan'dan getirdiği kutsal metinler için yapılmış Tang dönemi pagodası. Akşam fıskiye gösterisi."
   },
   {
    "t": "Huashan Dağı",
    "time": "Tam gün, isteğe bağlı",
-   "d": "Uçurum patikalı kutsal dağ. Teleferik var."
+   "d": "Çin'in beş kutsal dağından biri; baş döndüren uçurum patikalarıyla ünlü. İşin çoğunu teleferikler yapıyor."
   },
   {
    "t": "Sarı Turna Kulesi",
    "time": "1–2 sa",
-   "d": "Yangtze manzaralı efsanevi kule."
+   "d": "Tang şiirlerinde övülen efsanevi kule; Yangtze'ye geniş manzara."
   },
   {
    "t": "Hubei Eyalet Müzesi",
    "time": "2–3 sa",
-   "d": "2.400 yıllık bronz çanlar, Goujian Kılıcı."
+   "d": "2.400 yıllık Marki Yi bronz çanlarına (bazı günler konser) ve hâlâ keskin Goujian Kılıcı'na ev sahipliği yapar."
   },
   {
    "t": "Doğu Gölü",
    "time": "Yarım gün",
-   "d": "100 km bisiklet yolu olan dev göl."
+   "d": "100 km'yi aşan bisiklet yoluyla dev bir şehir gölü. Bisiklet kiralayın, gün batımına doğru sürün."
   },
   {
    "t": "Yangtze Nehri Köprüsü",
    "time": "1 sa",
-   "d": "Yangtze'nin ilk köprüsü (1957)."
+   "d": "Yangtze üzerine yapılmış ilk köprü (1957): üstte karayolu, altta demiryolu. Nehir manzarası için yürüyün."
   },
   {
    "t": "Yasak Şehir",
    "time": "Yarım gün",
-   "d": "İmparatorluk sarayı. 7 gün önceden bilet. Pazartesi kapalı."
+   "d": "980 yapıdan oluşan imparatorluk sarayı. Pasaportunuzla tam 7 gün önceden bilet alın. Pazartesi kapalı."
   },
   {
    "t": "Mutianyu'da Çin Seddi",
    "time": "Tam gün",
-   "d": "Teleferikle çıkış, kızakla iniş."
+   "d": "Restore edilmiş ama çok güzel; şehirden yaklaşık 1,5 sa. Yukarı teleferik, aşağı kızak."
   },
   {
    "t": "Cennet Tapınağı",
    "time": "2 sa, sabah",
-   "d": "Tai chi yapanlar için erken gidin."
+   "d": "İmparatorların bereket için dua ettiği yer. Parkta tai chi yapan, dans eden, şarkı söyleyen yerlileri görmek için erken gelin."
   },
   {
    "t": "Yaz Sarayı",
    "time": "Yarım gün",
-   "d": "Göl kenarı imparatorluk sarayı."
+   "d": "İmparatorluğun göl kenarındaki yazlık sarayı: Uzun Koridor, Uzun Ömür Tepesi ve Kunming Gölü'nde tekneler."
   },
   {
    "t": "Hutonglar",
    "time": "Öğleden sonra",
-   "d": "Eski sokaklar; en iyisi bisikletle."
+   "d": "Nanluoguxiang, Shichahai ve Houhai çevresindeki eski avlulu sokaklar. En iyisi bisikletle gezmek."
   },
   {
    "t": "Bund",
    "time": "Akşam",
-   "d": "Silüete bakan 1920'ler kıyısı. Gece gidin."
+   "d": "Pudong silüetine bakan, 1920'lerden kalma bankalarla dolu nehir kıyısı. İki yakanın da ışıklandığı gece gidin."
   },
   {
    "t": "Lujiazui ve Shanghai Tower",
    "time": "2 sa",
-   "d": "Seyir terası olan 632 m'lik kule."
+   "d": "İnci Kulesi, 'şişe açacağı' ve dünyanın en yüksek seyir teraslarından birine sahip 632 m'lik Shanghai Tower."
   },
   {
    "t": "Yu Bahçesi",
    "time": "2 sa",
-   "d": "Ming bahçesi. Yanında çorbalı mantı."
+   "d": "Eski şehir çarşısının içinde kaya bahçeleri, koi balıkları ve köşklerle dolu Ming dönemi bahçesi. Hemen yanında çorbalı mantı yiyin."
   },
   {
    "t": "Suzhou bahçeleri",
    "time": "Günübirlik, 25 dk",
-   "d": "UNESCO klasik bahçeleri ve kanallar."
+   "d": "UNESCO listesindeki klasik bahçeler: Alçakgönüllü Yöneticinin Bahçesi ve kanal kenarındaki Pingjiang Caddesi."
   },
   {
    "t": "Hangzhou Batı Gölü",
    "time": "Günübirlik, yaklaşık 1 sa",
-   "d": "Göl, pagodalar ve çay tepeleri."
+   "d": "Söğütlü bentler, pagodalar ve tepelerde Longjing çay bahçeleri. Klasik Çin."
   },
   {
    "t": "Avatar Hallelujah Dağı",
    "time": "Yarım gün",
-   "d": "İlham verdiği filmin adını alan sütun."
+   "d": "Yuanjiajie'deki Güney Gök Sütunu, ilham verdiği filmin adını aldı. Sis onu büyülü kılıyor."
   },
   {
    "t": "Zhangjiajie Orman Parkı",
    "time": "1–2 gün",
-   "d": "200 m'lik binlerce kumtaşı sütun."
+   "d": "Çin'in ilk milli orman parkı: bazıları 200 m'yi aşan binlerce kuvars-kumtaşı sütun. UNESCO (Wulingyuan)."
   },
   {
    "t": "Bailong Asansörü",
    "time": "Kısa bir yolculuk",
-   "d": "Uçuruma tutturulmuş 326 m'lik cam asansör."
+   "d": "Uçurum yüzeyine monte edilmiş 326 m'lik cam asansör; dünyanın en yüksek açık hava asansörü."
   },
   {
    "t": "Tianmen Dağı",
    "time": "Tam gün",
-   "d": "Teleferik, uçurum yürüyüş yolu ve Cennet Kapısı."
+   "d": "Şehir merkezinden kalkan teleferik, uçurum kenarında cam yürüyüş yolu ve Cennet Kapısı denen 131 m'lik doğal kemer."
   },
   {
    "t": "Büyük Kanyon cam köprüsü",
    "time": "Yarım gün",
-   "d": "300 m yükseklikte cam zeminli köprü. Herkese göre değil."
+   "d": "Kanyon tabanından yaklaşık 300 m yüksekte, zemini camdan bir yaya köprüsü. Herkese göre değil."
   },
   {
    "t": "Zhecheng laboratuvar elmasları",
    "time": "Öğleden sonra",
-   "d": "Fabrika showroomları. Taşlar doğalın 1/5–1/10'u fiyatına."
+   "d": "Fabrika mağazaları (Liliang ve Huifeng) ham taşların nasıl üretildiğini gösteriyor ve hazır mücevher satıyor. Laboratuvar elmasları doğalın kabaca 1/5–1/10'u fiyatına."
   },
   {
    "t": "Zhecheng ve Ronghu Gölü",
    "time": "1 sa",
-   "d": "Göl kenarı park ve pagoda."
+   "d": "İlçe merkezinin göl kenarı parkı ve pagodası. Planlanan elmas ticaret merkezi Ronghu sulak alanının kıyısında."
   },
   {
    "t": "Guide Antik Kenti",
    "time": "Akşam",
-   "d": "Hendekli, surlu Ming kasabası."
+   "d": "Kapıları, hendeği ve sokaklarıyla Ming dönemi surlu kasaba; orta Çin'in en iyi korunmuşlarından."
   }
  ],
  "waypoints": [
