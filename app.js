@@ -77,12 +77,15 @@
   }
 
   /* ---------- state ---------- */
-  const S = { w: "A", dir: "fwd", via: "xian", zjj: false, zc: false, zz: false, pax: 1 };
+  const S = { w: "A", dir: "fwd", via: "xian", zjj: "", zz: false, pax: 1 };
   let tab = "overview", placeFilter = "route", todoSub = "tour";
   if (Q.get("w") === "B") S.w = "B";
   if (Q.get("dir") === "rev") S.dir = "rev";
   if (Q.get("via") === "wh") S.via = "wh";
-  S.zjj = Q.get("zjj") === "1"; S.zc = Q.get("zc") === "1"; S.zz = !S.zc && Q.get("zz") === "1";
+  { const z = Q.get("zjj"); S.zjj = z === "day" || z === "stay" ? z : z === "1" ? "stay" : ""; }
+  S.zz = Q.get("zz") === "1" || Q.get("zc") === "1";
+  const fixZjj = () => { if (S.zjj === "stay" && S.via !== "wh") S.zjj = "day"; };
+  fixZjj();
   { const p = parseInt(Q.get("pax"), 10); if (p > 0 && p < 20) S.pax = p; }
   { const h = location.hash.slice(1); if (TABS.includes(h)) tab = h; else if (h === "places") tab = "todo"; else if (h === "food") { tab = "todo"; todoSub = "food"; } }
   function writeURL() {
@@ -91,8 +94,7 @@
     if (S.w !== "A") q.set("w", S.w);
     if (S.dir !== "fwd") q.set("dir", S.dir);
     if (S.via !== "xian") q.set("via", S.via);
-    if (S.zjj) q.set("zjj", "1");
-    if (S.zc) q.set("zc", "1");
+    if (S.zjj) q.set("zjj", S.zjj);
     if (S.zz) q.set("zz", "1");
     if (S.pax !== 1) q.set("pax", S.pax);
     history.replaceState(null, "", location.pathname + "?" + q.toString() + "#" + tab);
@@ -119,9 +121,9 @@
 
   function build() {
     const W = T.windows[S.w];
-    let roles = ["CKG", S.zjj && "ZJJ", "MID", S.zc && "SQ", "BJ", "SH"].filter(Boolean);
+    let roles = ["CKG", S.zjj === "stay" && "ZJJ", "MID", "BJ", "SH"].filter(Boolean);
     if (S.dir === "rev") roles = roles.reverse();
-    const key = S.zjj && S.zc ? "both" : S.zjj ? "zjj" : S.zc ? "zc" : "none";
+    const key = S.zjj === "stay" ? "zjj" : "none";
     const nights = T.nights[S.w][S.dir][key];
     const mid = S.via === "xian" ? "XIAN" : "WH";
     let cur = D(W.start);
@@ -136,7 +138,7 @@
       const a = stops[i - 1].code, b = stops[i].code, k = `${a}-${b}`;
       legs.push({ k, a, b, d: T.legs[k], date: stops[i].arrive, path: pathFor(a, b), to: stops[i] });
     }
-    if (S.zz && !S.zc) {
+    if (S.zz) {
       const L = legs.find((l) => (l.a === mid && l.b === "BJ") || (l.a === "BJ" && l.b === mid));
       if (L) {
         const k1 = `${L.a}-ZZ`, k2 = `ZZ-${L.b}`, d1 = T.legs[k1], d2 = T.legs[k2];
@@ -144,14 +146,23 @@
         L.d = { rec: [`${d1.rec[0]} + ${d2.rec[0]}`, d1.rec[1], d1.rec[2], d2.rec[3], d2.rec[4], toDur(mins(d1.rec[5]) + mins(d2.rec[5])), d1.rec[6] + d2.rec[6], null], alts: [], note: "", daily: 0 };
       }
     }
-    const rail = legs.filter((l) => !l.d.flight), fl = legs.filter((l) => l.d.flight);
+    let dayTrip = null;
+    if (S.zjj === "day") {
+      const ck = stops.find((x) => x.code === "CKG");
+      const k = S.dir === "fwd" ? Math.max(1, ck.n - 1) : Math.min(1, ck.n - 1);
+      const date = add(ck.arrive, k);
+      dayTrip = { k, date, segs: [
+        { k: "CKG-ZJJ-DAY", a: "CKG", b: "ZJJ", d: T.legs["CKG-ZJJ-DAY"], date, to: { c: city("ZJJ") } },
+        { k: "ZJJ-CKG-DAY", a: "ZJJ", b: "CKG", d: T.legs["ZJJ-CKG-DAY"], date, to: { c: city("CKG") } }] };
+    }
+    const rail = legs.filter((l) => !l.d.flight).concat(dayTrip ? dayTrip.segs : []), fl = legs.filter((l) => l.d.flight);
     return {
-      W, stops, legs, key,
+      W, stops, legs, key, dayTrip,
       railMin: rail.reduce((s, l) => s + mins(l.d.rec[5]), 0),
       railYen: rail.reduce((s, l) => s + (l.d.rec[6] || 0), 0),
       railYen1: rail.reduce((s, l) => s + (l.d.rec[7] || 0), 0), has1: rail.every((l) => l.d.rec[7]),
       flightEur: fl.reduce((s, l) => s + (l.d.eur || 0), 0),
-      nRail: rail.length, nFlight: fl.length
+      nRail: rail.reduce((n, l) => n + (l.segs ? l.segs.length : 1), 0), nFlight: fl.length
     };
   }
   function flightSet() {
@@ -191,13 +202,15 @@
   function syncBuilder() {
     $$(".seg[data-key]").forEach((seg) => { const k = seg.dataset.key; $$("button", seg).forEach((b) => b.classList.toggle("on", b.dataset.val === S[k])); });
     $$(".chip-t").forEach((b) => b.setAttribute("aria-pressed", S[b.dataset.key] ? "true" : "false"));
+    const st = $('.seg[data-key="zjj"] button[data-val="stay"]'); if (st) { st.disabled = S.via !== "wh"; st.title = S.via !== "wh" ? U.b.stayOnlyWh : ""; }
     $("#langBtn").textContent = U.b.lang;
   }
   $$(".seg[data-key]").forEach((seg) => seg.addEventListener("click", (e) => {
     const b = e.target.closest("button"); if (!b) return;
-    S[seg.dataset.key] = b.dataset.val; update();
+    if (b.disabled) return;
+    S[seg.dataset.key] = b.dataset.val; fixZjj(); update();
   }));
-  function toggle(k) { S[k] = !S[k]; if (k === "zz" && S.zz) S.zc = false; if (k === "zc" && S.zc) S.zz = false; }
+  function toggle(k) { S[k] = !S[k]; }
   $$(".chip-t").forEach((b) => b.addEventListener("click", () => { toggle(b.dataset.key); update(); }));
   $("#langBtn").addEventListener("click", () => { setLang(LANG === "tr" ? "en" : "tr"); $("#foot").innerHTML = footer(); update(); showTab(tab); });
   $("#shareBtn").addEventListener("click", async () => {
@@ -246,7 +259,8 @@
     const eurTl = (e) => `€${num(e)} (${U.approx} ${tl(e * FX.eur)})`;
     const longest = Math.max.apply(null, R.legs.filter((l) => !l.d.flight).map((l) => mins(l.d.rec[5])));
     const why = [];
-    why.push(S.w === "A" ? o.gwA(esc(sn(first.c)), S.zjj && S.dir === "fwd", fmt(R.legs[0].date)) : o.gwB);
+    why.push(S.w === "A" ? o.gwA(esc(sn(first.c)), S.zjj === "stay" && S.dir === "fwd", fmt(R.legs[0].date)) : o.gwB);
+    if (R.dayTrip) why.push(o.dayTrip(fmt(R.dayTrip.date)));
     why.push(o.rides(R.nRail, hm(R.railMin), hm(longest)));
     why.push(o.jaw(esc(sn(first.c)), esc(sn(last.c)), eurTl(flyFrom), satFrom ? eurTl(satFrom) : null));
     why.push(S.via === "xian" ? o.xian : o.wh);
@@ -297,7 +311,7 @@
     let h = `<div class="ribbon">`;
     R.stops.forEach((s, i) => {
       if (i > 0) { const l = R.legs[i - 1]; h += `<div class="rleg">${l.segs ? `🚄 ${esc(dur(l.segs[0].d.rec[5]))} · 💎 ${esc(sn(T.zz))} · ${esc(dur(l.segs[1].d.rec[5]))}` : `${l.d.flight ? "✈️" : "🚄"} ${esc(dur(l.d.rec[5]))}`}</div>`; }
-      h += `<div class="rstop" style="--c:${s.c.color}"><div class="dot">${s.c.emoji}</div><div class="nm">${esc(sn(s.c))}</div><div class="dt">${fmtShort(s.arrive)} – ${fmtShort(s.depart)}</div><span class="nt">${U.nights(s.n)}</span></div>`;
+      h += `<div class="rstop" style="--c:${s.c.color}"><div class="dot">${s.c.emoji}</div><div class="nm">${esc(sn(s.c))}</div><div class="dt">${fmtShort(s.arrive)} – ${fmtShort(s.depart)}</div><span class="nt">${U.nights(s.n)}</span>${R.dayTrip && s.code === "CKG" ? `<span class="nt dt">🏔️ ${U.day.ribbon}</span>` : ""}</div>`;
     });
     return h + `</div>`;
   }
@@ -328,6 +342,10 @@
           badges = `<span class="badge tr">${l.d.flight ? u.fly : u.train}</span>` + badges;
           const late = !l.d.flight && /^(1[89]|2\d)/.test(l.d.rec[4]);
           body = `<div class="t">${esc(sn(R.stops[i - 1].c))} → ${esc(sn(s.c))}</div>${l.segs ? miniTicket(l.segs[0]) + `<p class="tip">💎 ${esc(U.zz.day(l.segs[0].d.rec[4], l.segs[1].d.rec[2]))}</p>` + miniTicket(l.segs[1]) : miniTicket(l)}<p>${late ? (s.code === "ZJJ" ? u.lateZJJ : u.late) : esc(plan.a)}</p>`;
+        } else if (R.dayTrip && s.code === "CKG" && k === R.dayTrip.k) {
+          cls += " travel";
+          badges = `<span class="badge tr" style="--c:var(--green)">${U.day.badge}</span>` + badges;
+          body = `<div class="t">${U.day.title}</div>${miniTicket(R.dayTrip.segs[0])}<p>${U.day.plan}</p>${miniTicket(R.dayTrip.segs[1])}${isGW ? `<p class="tip">💡 ${U.day.gw}</p>` : ""}`;
         } else {
           body = `<div class="t">${esc(sn(s.c))}</div><p>${esc(plan.d[(k - 1) % plan.d.length])}</p>`;
         }
@@ -345,6 +363,7 @@
   function vTodo(R) {
     const u = U.todo, onRoute = new Set(R.stops.map((s) => s.code));
     if (S.zz) onRoute.add("SQ");
+    if (S.zjj) onRoute.add("ZJJ");
     const order = ["CKG", "XIAN", "WH", "ZJJ", "SQ", "BJ", "SH"];
     const inFilter = (c) => placeFilter === "all" ? true : placeFilter === "route" ? onRoute.has(c) : c === placeFilter;
     const places = T.places.map((p, i) => Object.assign({}, p, { local: window.TRIP.places[i].local, img: window.TRIP.places[i].img }));
@@ -390,7 +409,9 @@
   function vTrains(R) {
     const u = U.trains, th = u.th;
     const rides = [];
-    R.legs.forEach((l, i) => { if (l.segs) l.segs.forEach((sg, j) => rides.push(Object.assign({ n: `${i + 1}${"ab"[j]}` }, sg))); else rides.push(Object.assign({ n: i + 1 }, l)); });
+    R.legs.forEach((l) => { if (l.segs) l.segs.forEach((sg) => rides.push(Object.assign({}, sg))); else rides.push(Object.assign({}, l)); });
+    if (R.dayTrip) R.dayTrip.segs.forEach((sg) => rides.push(Object.assign({}, sg)));
+    rides.sort((a, b) => a.date - b.date || a.d.rec[2].localeCompare(b.d.rec[2])).forEach((r, i) => { r.n = i + 1; });
     const g = gwLegs(R);
     const gwTxt = S.w === "A" ? (g.length ? u.gwLeg(fmt(g[0].date), esc(g[0].d.rec[0]), fmt(add(g[0].date, -15))) : u.gwNone) : "";
     let h = `<div class="sh"><div><h2>${u.h}</h2><p>${u.intro}</p></div></div>
@@ -455,33 +476,23 @@
   }
 
   function vDetours() {
-    const base = T.nights[S.w][S.dir], u = U.det;
+    const base = T.nights[S.w][S.dir], u = U.det, fwd = S.dir === "fwd";
     const diff = (withK, withoutK) => {
       const a = base[withK], b = base[withoutK], out = [];
       Object.keys(b).forEach((k) => { const d = (a[k] || 0) - b[k]; if (d) out.push(`${sn(city(k === "MID" ? (S.via === "xian" ? "XIAN" : "WH") : k))} ${d > 0 ? "+" : "−"}${U.nights(Math.abs(d))}`); });
       return out.join(", ");
     };
-    const withZ = S.zc ? "both" : "zjj", noZ = S.zc ? "zc" : "none";
-    const withC = S.zjj ? "both" : "zc", noC = S.zjj ? "zjj" : "none";
-    const xian = S.via === "xian", fwd = S.dir === "fwd";
-    const dz = diff(withZ, noZ), dc = diff(withC, noC);
+    const d1 = T.legs["CKG-ZJJ-DAY"].rec, d2 = T.legs["ZJJ-CKG-DAY"].rec;
     const midC = S.via === "xian" ? "XIAN" : "WH", z1 = T.legs[fwd ? `${midC}-ZZ` : "BJ-ZZ"].rec, z2 = T.legs[fwd ? "ZZ-BJ" : `ZZ-${midC}`].rec;
     const zzHow = (fwd ? u.zzHowFwd : u.zzHowRev)(esc(sn(city(midC))), `${z1[0]} ${z1[2]}–${z1[4]}`, `${z2[0]} ${z2[2]}–${z2[4]}`);
+    const mode = (v, label, dis) => `<button class="addbtn zjj ${S.zjj === v ? "on" : ""}" data-zjj="${v}"${dis ? ` disabled title="${esc(U.b.stayOnlyWh)}"` : ""}>${label}</button>`;
     return `<div class="sh"><div><h2>${u.h}</h2><p>${u.intro}</p></div></div>
       <div class="dcard"><div class="imgs"><img src="${img("avatar")}" alt="" loading="lazy"><img src="${img("bailong")}" alt="" loading="lazy"><img src="${img("tianmen")}" alt="" loading="lazy"></div>
         <div class="bd"><span class="badge tr" style="--c:var(--green)">${u.zBadge}</span><h3>${u.zT}</h3><p>${u.zP}</p>
-          <ul><li><b>${u.get}</b> ${fwd ? u.zHowFwd(xian) : u.zHowRev(xian)}</li>
-          <li><b>${u.do}</b> ${u.zDo}</li>
-          <li><b>${u.stay}</b> ${u.zStay}</li>
-          <li><b>${u.costs}</b> ${dz || u.none}${S.w === "A" && fwd ? u.zGW : ""}.</li></ul>
-          <button class="addbtn zjj ${S.zjj ? "on" : ""}" data-toggle="zjj">${S.zjj ? u.added : u.add}</button></div></div>
-      <div class="dcard"><div class="imgs"><img src="${img("labdiamond")}" alt="" loading="lazy"><img src="${img("zhecheng")}" alt="" loading="lazy"><img src="${img("shangqiu")}" alt="" loading="lazy"></div>
-        <div class="bd"><span class="badge tr" style="--c:var(--cyan)">${u.cBadge}</span><h3>${u.cT}</h3><p>${u.cP}</p>
-          <ul><li><b>${u.get}</b> ${fwd ? u.cHowFwd(xian) : u.cHowRev(xian)}</li>
-          <li><b>${u.do}</b> ${u.cDo}</li>
-          <li><b>${u.tips}</b> ${u.cTips}</li>
-          <li><b>${u.costs}</b> ${dc || u.none}${u.cCar}.</li></ul>
-          <button class="addbtn zc ${S.zc ? "on" : ""}" data-toggle="zc">${S.zc ? u.added : u.add}</button></div></div>
+          <ul><li><b>${U.b.zjjDay}:</b> ${u.zDay(`${d1[0]} ${d1[2]}→${d1[4]}`, `${d2[0]} ${d2[2]}→${d2[4]}`)}</li>
+          <li><b>${U.b.zjjStay}:</b> ${u.zStayHow} ${S.via === "wh" ? `(${diff("zjj", "none")})` : u.zXianNote}</li>
+          <li><b>${u.do}</b> ${u.zDo}</li></ul>
+          <div class="modes">${mode("", U.b.zjjOff)}${mode("day", "🏔️ " + U.b.zjjDay)}${mode("stay", "🛏️ " + U.b.zjjStay, S.via !== "wh")}</div></div></div>
       <div class="dcard"><div class="imgs one"><img src="${img("labdiamond")}" alt="" loading="lazy"></div>
         <div class="bd"><span class="badge tr" style="--c:var(--cyan)">${u.zzBadge}</span><h3>${u.zzT}</h3><p>${u.zzP}</p>
           <ul><li><b>${u.get}</b> ${zzHow}</li><li><b>${u.do}</b> ${u.zzDo}</li><li>${u.zzVs}</li></ul>
@@ -532,6 +543,7 @@
     setTiles();
     layer = L.layerGroup().addTo(map);
     const used = new Set(R.legs.map((l) => [l.a, l.b].sort().join("-")));
+    if (R.dayTrip) used.add("CKG-ZJJ");
     Object.keys(T.paths).forEach((k) => {
       const [a, b] = k.split("-"); if (used.has([a, b].sort().join("-")) || T.paths[k] === "flight") return;
       L.polyline(T.paths[k], { color: "#b9b2a6", weight: 3, opacity: .7, dashArray: "6 7" }).addTo(layer)
@@ -545,6 +557,12 @@
       all.push.apply(all, l.path.pts);
     });
     if (R.legs.some((l) => l.segs)) L.marker(T.zz.ll, { icon: L.divIcon({ className: "", html: `<div class="mk"><span class="n" style="background:${T.zz.color}">💎</span><span class="l">${esc(sn(T.zz))}</span></div>`, iconSize: [0, 0] }), zIndexOffset: 900 }).addTo(layer);
+    if (R.dayTrip) {
+      const p = pathFor("CKG", "ZJJ").pts;
+      L.polyline(p, { color: "#fff", weight: 8, opacity: .9 }).addTo(layer);
+      L.polyline(p, { color: city("ZJJ").color, weight: 4, dashArray: "8 8" }).addTo(layer).bindTooltip(`${U.day.title} · ${fmt(R.dayTrip.date)}`, { sticky: true });
+      L.marker(city("ZJJ").ll, { icon: L.divIcon({ className: "", html: `<div class="mk"><span class="n" style="background:${city("ZJJ").color}">🏔️</span><span class="l">${esc(sn(city("ZJJ")))} <small>${U.day.ribbon}</small></span></div>`, iconSize: [0, 0] }), zIndexOffset: 900 }).addTo(layer);
+    }
     T.waypoints.forEach((w) => {
       L.marker(w.ll, { icon: L.divIcon({ className: "", html: `<div class="wp"></div>`, iconSize: [10, 10], iconAnchor: [5, 5] }) }).addTo(layer)
         .bindPopup(`<div class="pop"><div><b>${esc(w.n)}</b> <span class="zh">${esc(w.zh)}</span><br>${esc(w.t)}</div></div>`);
@@ -593,6 +611,8 @@
     const sb = e.target.closest("[data-sub]");
     if (sb) { todoSub = sb.dataset.sub; $("#v-todo").innerHTML = vTodo(build()); return; }
     const tg = e.target.closest("[data-toggle]");
+    const zb = e.target.closest("[data-zjj]");
+    if (zb) { S.zjj = zb.dataset.zjj; fixZjj(); update(); return; }
     if (tg) { toggle(tg.dataset.toggle); update(); toast(S[tg.dataset.toggle] ? U.toast.added : U.toast.removed); return; }
     const px = e.target.closest("[data-pax]");
     if (px) { S.pax = Math.max(1, Math.min(19, S.pax + Number(px.dataset.pax))); writeURL(); $("#v-flights").innerHTML = vFlights(build()); }

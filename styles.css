@@ -322,3 +322,9 @@ details.oneway summary{cursor:pointer}
 .subtabs button.on .cnt{background:rgba(255,255,255,.25)}
 .fnote{margin:-4px 0 14px;font-size:13.5px}
 .fbody h3 .off,.lhead .off{position:static;font-size:11px;font-weight:700;color:#fff;padding:2px 8px;border-radius:999px;background:var(--mut);margin-left:6px;vertical-align:middle}
+.nt.dt{display:block;width:fit-content;margin:4px auto 0;--c:var(--green)}
+.modes{display:flex;gap:8px;flex-wrap:wrap}
+.addbtn:disabled{opacity:.4;cursor:not-allowed}
+.seg button:disabled{opacity:.35;cursor:not-allowed}
+.modes .addbtn{background:var(--bg2);color:var(--ink);border:1px solid var(--line)}
+.modes .addbtn.on{background:var(--green);color:#fff;border-color:var(--green)}

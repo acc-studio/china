@@ -313,3 +313,36 @@ window.I18N = {
   I.en.todo = { h: "Things To Do", intro: "What to eat, see and do at each stop. Pick a section, then filter by city.", food: "🍜 Food", tour: "🏛️ Tourism", life: "🌃 Life", route: "⭐ My route", all: "All", optional: "optional", street: "Street food", sit: "Sit-down", pork: "pork", henan: "Henan", foodNote: "Pork is common (marked 🐖). For halal food, head to Xi'an's Muslim Quarter or look for 清真 signs." };
   I.tr.todo = { h: "Yapılacaklar", intro: "Her durakta ne yenir, ne görülür, ne yapılır. Bir bölüm seçin, sonra şehre göre filtreleyin.", food: "🍜 Yemek", tour: "🏛️ Turistik", life: "🌃 Yaşam", route: "⭐ Rotam", all: "Tümü", optional: "isteğe bağlı", street: "Sokak lezzetleri", sit: "Oturmalı", pork: "domuz", henan: "Henan", foodNote: "Domuz eti yaygın (🐖 ile işaretli). Helal yemek için Şian'ın Müslüman Mahallesi'ne gidin ya da 清真 tabelalarını arayın." };
 })(window.I18N);
+
+/* Zhangjiajie day trip; Zhecheng removed */
+(function (I) {
+  const en = I.en, tr = I.tr;
+  Object.assign(en.b, { zjjL: "Avatar mountains", zjjOff: "Off", zjjDay: "Day trip", zjjStay: "2 nights", diamonds: "Diamonds", stayOnlyWh: "2 nights works on the Wuhan route (train on to Wuhan, no flights)." });
+  Object.assign(tr.b, { zjjL: "Avatar dağları", zjjOff: "Yok", zjjDay: "Günübirlik", zjjStay: "2 gece", diamonds: "Elmas", stayOnlyWh: "2 gece seçeneği Vuhan rotasında var (Vuhan'a trenle devam, uçuş yok)." });
+  en.day = { badge: "🏔️ Day trip", title: "Zhangjiajie day trip", ribbon: "day trip",
+    plan: "Taxi or Didi from Zhangjiajie West to the Wulingyuan gate (~50 min). About 7 hours in the park: Bailong Elevator, Yuanjiajie and Avatar Mountain. Back at your hotel around 23:00.",
+    gw: "Golden Week: the park will be packed. The 8–23 May dates avoid this." };
+  tr.day = { badge: "🏔️ Günübirlik", title: "Zhangjiajie günübirlik gezi", ribbon: "günübirlik",
+    plan: "Zhangjiajie West'ten Wulingyuan girişine taksi ya da Didi (~50 dk). Parkta yaklaşık 7 saat: Bailong Asansörü, Yuanjiajie ve Avatar Dağı. Otele dönüş 23:00 civarı.",
+    gw: "Altın Hafta: park çok kalabalık olur. 8–23 Mayıs tarihleri bunu önler." };
+  en.ov.dayTrip = (d) => `<b>Avatar mountains as a day trip</b> by train from Chongqing on ${d} (2.5 h each way), no flights.`;
+  tr.ov.dayTrip = (d) => `<b>Avatar dağlarına günübirlik gezi:</b> ${d}, Çongçing'den trenle (yön başına 2,5 sa), uçuş yok.`;
+  Object.assign(en.det, {
+    intro: "Optional add-ons, all by train. Switch them here or in the bar above.",
+    zDay: (t1, t2) => `from Chongqing, ${t1} out and ${t2} back, about 7 hours in the park. Long but doable.`,
+    zStayHow: "train from Chongqing East (2–3 h), 2 nights in Wulingyuan, then a direct train to Wuhan (5 h).",
+    zXianNote: "Only on the Wuhan route: there's no direct train from Zhangjiajie to Xi'an.",
+    zzVs: "You see showrooms and traders, not factories.",
+    also: "Chengdu (giant pandas) is easy to add for a night if you fly in or out of Tianfu."
+  });
+  Object.assign(tr.det, {
+    intro: "İsteğe bağlı ekler, hepsi trenle. Buradan ya da üstteki çubuktan değiştirin.",
+    zDay: (t1, t2) => `Çongçing'den, gidiş ${t1}, dönüş ${t2}; parkta yaklaşık 7 saat. Uzun ama yapılabilir.`,
+    zStayHow: "Chongqing East'ten trenle (2–3 sa), Wulingyuan'da 2 gece, ardından Vuhan'a direkt tren (5 sa).",
+    zXianNote: "Sadece Vuhan rotasında: Zhangjiajie'den Şian'a direkt tren yok.",
+    zzVs: "Fabrika değil, showroom ve tüccarlar görürsünüz.",
+    also: "Tianfu'ya uçuyor ya da oradan dönüyorsanız Çengdu'yu (dev pandalar) bir gecelik eklemek kolay."
+  });
+  en.info.book[0] = "Sales open <b>15 days</b> ahead. Low-frequency rides sell out first (Zhangjiajie–Wuhan has 2 a day).";
+  tr.info.book[0] = "Satış <b>15 gün</b> önce açılır. Az seferli trenler önce dolar (Zhangjiajie–Vuhan günde 2 tren).";
+})(window.I18N);
